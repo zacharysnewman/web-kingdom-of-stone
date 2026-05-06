@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Kingdom of Stone</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="styles/styles.css">
+</head>
+<body>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- Main Menu -->
+    <div id="mainMenu" class="absolute inset-0 bg-gray-950 z-50 flex flex-col items-center justify-center interactive">
+        <h1 class="text-5xl font-black tracking-tight mb-1 text-white">Kingdom of Stone</h1>
+        <p class="text-gray-500 mb-10 text-sm uppercase tracking-widest">Free-for-All RTS</p>
+
+        <div class="flex flex-col items-center space-y-3 w-64">
+            <button id="newGameBtn" class="w-full px-6 py-3 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold text-lg shadow-lg shadow-blue-900/50 transition-all active:scale-95">New Game</button>
+            <button id="continueBtn" class="w-full px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-xl font-bold text-lg shadow-lg transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed">Continue</button>
+
+            <div class="w-full h-px bg-gray-800 my-2"></div>
+
+            <!-- Difficulty -->
+            <div class="w-full">
+                <label class="text-xs text-gray-400 uppercase tracking-widest mb-2 block">Difficulty</label>
+                <div id="difficultySelector" class="grid grid-cols-3 gap-2">
+                    <button data-diff="easy"   class="diff-btn px-3 py-2 rounded-lg text-sm font-bold bg-gray-800 hover:bg-gray-700 transition-colors">Easy</button>
+                    <button data-diff="medium" class="diff-btn px-3 py-2 rounded-lg text-sm font-bold bg-blue-700 hover:bg-blue-600 transition-colors ring-2 ring-blue-400">Medium</button>
+                    <button data-diff="hard"   class="diff-btn px-3 py-2 rounded-lg text-sm font-bold bg-gray-800 hover:bg-gray-700 transition-colors">Hard</button>
+                </div>
+            </div>
+
+            <!-- AI Count -->
+            <div class="w-full">
+                <label class="text-xs text-gray-400 uppercase tracking-widest mb-2 block">Opponents <span id="aiCountLabel" class="text-white font-bold ml-1">2</span></label>
+                <input id="aiCountSlider" type="range" min="1" max="5" value="2"
+                    class="w-full accent-blue-500 cursor-pointer">
+            </div>
+        </div>
+    </div>
+
+    <!-- Top HUD -->
+    <div class="ui-layer top-0 left-0 w-full p-4 flex justify-between items-start z-10">
+        <div class="interactive bg-gray-900/80 backdrop-blur border border-gray-700 rounded-xl p-3 shadow-lg flex items-center space-x-3">
+            <div class="w-8 h-8 rounded-full bg-yellow-500/20 flex items-center justify-center border border-yellow-500">
+                <span class="text-yellow-400 font-bold">G</span>
+            </div>
+            <div>
+                <div class="text-xs text-gray-400 uppercase tracking-wider font-semibold">Treasury</div>
+                <div id="goldDisplay" class="text-2xl font-bold text-yellow-400 font-mono">1000</div>
+            </div>
+        </div>
+
+        <div class="flex space-x-2">
+            <button onclick="game.selectAllUnits()" class="interactive bg-gray-900/80 backdrop-blur border border-gray-700 rounded-xl px-4 py-2 shadow-lg text-xs font-bold hover:bg-gray-800 transition-colors">SELECT ARMY</button>
+            <div id="opponentsHud" class="bg-gray-900/80 backdrop-blur border border-gray-700 rounded-xl px-4 py-2 shadow-lg text-center">
+                <div class="text-xs text-gray-400 uppercase tracking-wider font-semibold">Opponents</div>
+                <div id="opponentsCount" class="text-sm font-bold text-red-400">—</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notifications -->
+    <div id="notificationCenter" class="ui-layer top-24 left-0 w-full flex flex-col items-center pointer-events-none z-20 space-y-2"></div>
+
+    <!-- Bottom Command Card -->
+    <div class="ui-layer bottom-0 left-0 w-full p-4 pb-8 bg-gradient-to-t from-gray-900 via-gray-900/90 to-transparent z-10 flex flex-col justify-end">
+        <div id="placementHint" class="hidden text-center mb-4 text-yellow-300 font-semibold animate-pulse drop-shadow-md">
+            Click ground to place building...<br>
+            <button class="interactive mt-2 px-4 py-1 bg-gray-700 rounded-full text-sm text-white" onclick="game.cancelPlacement()">Cancel</button>
+        </div>
+        <div id="selectionInfo" class="text-sm text-gray-300 mb-2 font-semibold">No units selected</div>
+        <div id="actionMenu" class="interactive action-menu flex overflow-x-auto space-x-3 pb-2 w-full snap-x"></div>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="gameOverScreen" class="hidden absolute inset-0 bg-black/90 z-50 flex flex-col items-center justify-center interactive backdrop-blur-md">
+        <h1 id="gameOverTitle" class="text-5xl font-black mb-2 tracking-tight">VICTORY</h1>
+        <p id="gameOverDesc" class="text-gray-400 mb-8 text-lg">The last enemy Town Center has fallen.</p>
+        <div class="flex space-x-3">
+            <button id="restartBtn" class="px-8 py-3 bg-blue-600 hover:bg-blue-500 rounded-lg font-bold shadow-lg shadow-blue-600/50 transition-all active:scale-95">Play Again</button>
+            <button id="menuBtn" class="px-8 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg font-bold transition-all active:scale-95">Main Menu</button>
+        </div>
+    </div>
+
+    <script src="src/script.js"></script>
+</body>
+</html>
