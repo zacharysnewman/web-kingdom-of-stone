@@ -108,12 +108,25 @@ Town Center upgrades unlock: improved mining rate, archer damage, soldier HP. Co
 
 ## Milestone Summary
 
-| Milestone | Key Deliverables |
-|-----------|-----------------|
-| M0 (now)  | Main menu, FFA multi-AI, Continue/save |
-| M0.5      | Vite build tooling, npm pipeline |
-| M1        | A* pathfinding, procedural maps |
-| M2        | PixiJS renderer, fog of war |
-| M3        | Howler audio |
-| M4        | Zustand state, population cap |
-| M5        | Villager FSM, control groups, unit stance, tech tree stub |
+| Milestone | Key Deliverables | Status |
+|-----------|-----------------|--------|
+| M0        | Main menu, FFA multi-AI, Continue/save | ✅ Done |
+| M0.5      | Vite build tooling, npm pipeline | ✅ Done |
+| M1        | A* pathfinding, procedural maps | 🔲 Next |
+| M2        | PixiJS renderer, fog of war | 🔲 Pending |
+| M3        | Howler audio | 🔲 Pending |
+| M4        | Zustand state, population cap | 🔲 Pending |
+| M5        | Villager FSM, control groups, unit stance, tech tree stub | 🔲 Pending |
+
+## Progress Notes
+
+### M0 — Done
+Main menu, difficulty selector, AI count slider, FFA multi-AI (teams 1–N), Continue/save via localStorage, game over screen.
+
+### M0.5 — Done
+- Vite 8 + `@tailwindcss/vite` (Tailwind v4)
+- `src/main.js` (ES module) replaces `src/script.js`
+- `src/style.css` combines Tailwind + existing custom CSS
+- CDN `<script>` removed from index.html
+- `npm run dev` serves on http://localhost:5173/
+- `pathfinding` and `simplex-noise` installed (ready for M1)
