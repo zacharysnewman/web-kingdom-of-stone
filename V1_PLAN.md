@@ -112,9 +112,9 @@ Town Center upgrades unlock: improved mining rate, archer damage, soldier HP. Co
 |-----------|-----------------|--------|
 | M0        | Main menu, FFA multi-AI, Continue/save | ✅ Done |
 | M0.5      | Vite build tooling, npm pipeline | ✅ Done |
-| M1        | A* pathfinding, procedural maps | 🔲 Next |
-| M2        | PixiJS renderer, fog of war | 🔲 Pending |
-| M3        | Howler audio | 🔲 Pending |
+| M1        | A* pathfinding, procedural maps | ✅ Done |
+| M2        | PixiJS renderer, fog of war | ✅ Done |
+| M3        | Howler audio | ✅ Done |
 | M4        | Zustand state, population cap | 🔲 Pending |
 | M5        | Villager FSM, control groups, unit stance, tech tree stub | 🔲 Pending |
 
@@ -125,8 +125,28 @@ Main menu, difficulty selector, AI count slider, FFA multi-AI (teams 1–N), Con
 
 ### M0.5 — Done
 - Vite 8 + `@tailwindcss/vite` (Tailwind v4)
-- `src/main.js` (ES module) replaces `src/script.js`
+- TypeScript (src/*.ts) replaces plain JS
 - `src/style.css` combines Tailwind + existing custom CSS
 - CDN `<script>` removed from index.html
 - `npm run dev` serves on http://localhost:5173/
-- `pathfinding` and `simplex-noise` installed (ready for M1)
+- `pathfinding` and `simplex-noise` installed
+
+### M1 — Done
+- A* nav grid (NAV_CELL=40) built from stone terrain, rebuilt on building placed/destroyed
+- Units follow A* waypoints; avoidance force layer handles micro-separation
+- Procedural map: seeded simplex-noise stone terrain, zone-based gold mine placement
+- Seed saved in localStorage for Continue; spawn areas kept clear
+
+### M2 — Done
+- PixiJS v8 `Application` replaces `<canvas>` + 2D context; WebGL renderer
+- World `Container` with zoom/pan camera transform applied each frame
+- Per-entity `Container` (shape + selection ring + HP bar) pooled by entity id; sorted by y each frame
+- Projectiles, effects, floating texts all rendered via PixiJS Graphics/Text
+- Static stone + grid graphics drawn once on map generation
+- Fog of war: `fogGrid` bitmask, `FOG_CELL=80`, semi-transparent Graphics overlay redrawn only when new cells explored; player units reveal `FOG_SIGHT=260px` radius each frame
+
+### M3 — Done
+- `howler` installed; `scripts/gen-audio.cjs` synthesises all sounds into `public/sounds/sprite.wav` (457 KB, no external assets)
+- Sprite layout: `ack` (0–200 ms) · `hit` (300–400 ms) · `build` (500–1000 ms) · `wind` (1200–5200 ms, looping)
+- `src/audio.ts` — `Audio.ack/hit/build/startWind/stopWind/spatialVol`
+- Triggers: `ack` on player right-click orders; `hit` on melee strike and projectile impact (spatially attenuated); `build` on player building completion; `wind` loops from `init()`, stops on game over
