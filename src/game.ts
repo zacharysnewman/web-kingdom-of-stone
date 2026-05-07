@@ -1147,7 +1147,7 @@ export class Game implements IGameContext {
             });
         }
 
-        if (builders.length < 4 && gold >= 50 && tc.buildQueue.length < 5) { tc.buildQueue.push('builder'); this.gold[team] -= 50; if (tc.timer <= 0) tc.timer = STATS.builder.buildTime!; }
+        if (builders.length < 4 && gold >= 50 && tc.buildQueue.length < 5) { const e0 = tc.buildQueue.length === 0; tc.buildQueue.push('builder'); this.gold[team] -= 50; if (e0) tc.timer = STATS.builder.buildTime!; }
 
         const bar = units.find(e => e.subType === 'barracks');
         if (!bar && gold >= 150) {
@@ -1161,7 +1161,7 @@ export class Game implements IGameContext {
         }
 
         if (bar && !bar.isConstructing && gold >= 75 && bar.buildQueue.length < 5) {
-            bar.buildQueue.push('soldier'); this.gold[team] -= 75; if (bar.timer <= 0) bar.timer = STATS.soldier.buildTime!;
+            const e0 = bar.buildQueue.length === 0; bar.buildQueue.push('soldier'); this.gold[team] -= 75; if (e0) bar.timer = STATS.soldier.buildTime!;
         }
 
         const army = units.filter(e => e.subType === 'soldier' && e.state === 'idle');
@@ -1366,8 +1366,9 @@ export class Game implements IGameContext {
             this.notify('Low Gold!', 'text-red-400'); return;
         }
         this.gold[0] -= STATS[type].cost;
+        const wasEmpty = building.buildQueue.length === 0;
         building.buildQueue.push(type);
-        if (building.timer <= 0) building.timer = STATS[type].buildTime ?? 10;
+        if (wasEmpty) building.timer = STATS[type].buildTime ?? 10;
         this.updateGoldUI();
         this._refreshTrainingProgress();
     }
