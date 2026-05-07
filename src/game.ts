@@ -425,17 +425,10 @@ export class Game implements IGameContext {
 
     updateGoldUI(): void { this._syncPlayerStore(); }
 
-    private _effectivePop(team: number): number {
-        const queued = this.entities
-            .filter(e => e.team === team && e.type === 'building')
-            .reduce((sum, e) => sum + e.buildQueue.reduce((s, t) => s + (STATS[t].popCost ?? 0), 0), 0);
-        return (this.population[team] ?? 0) + queued;
-    }
-
     private _syncPlayerStore(): void {
         playerStore.setState({
             gold:       this.gold[0],
-            population: this._effectivePop(0),
+            population: this.population[0] ?? 0,
             maxPop:     this.maxPop[0] ?? 0,
         });
     }
@@ -1082,10 +1075,10 @@ export class Game implements IGameContext {
                 if (this.population[e.team] < this.maxPop[e.team]) {
                     const unit = e.buildQueue.shift()!;
                     this.addEntity('unit', unit, e.x, e.y + e.radius + 20, e.team);
-                    if (e.buildQueue.length > 0) e.timer = this.diff.buildDelay * 3;
-                } else {
-                    e.timer = 0.25; // retry when a population slot opens
+                    if (e.buildQueue.length > 0)
+                        e.timer = STATS[e.buildQueue[0]].buildTime ?? 10;
                 }
+                // else: pop full — unit is trained and waiting; timer stays at 0 so spawn happens the frame pop opens
             }
         }
 
@@ -1124,6 +1117,7 @@ export class Game implements IGameContext {
         this.floatingTexts = this.floatingTexts.filter(ft => !ft.isDead);
 
         this._updateFog();
+        this._refreshTrainingProgress();
     }
 
     private _checkWinCondition(): void {
@@ -1153,7 +1147,7 @@ export class Game implements IGameContext {
             });
         }
 
-        if (builders.length < 4 && gold >= 50 && this._effectivePop(team) < this.maxPop[team]) { tc.buildQueue.push('builder'); this.gold[team] -= 50; if (tc.timer <= 0) tc.timer = 2; }
+        if (builders.length < 4 && gold >= 50 && tc.buildQueue.length < 5) { tc.buildQueue.push('builder'); this.gold[team] -= 50; if (tc.timer <= 0) tc.timer = STATS.builder.buildTime!; }
 
         const bar = units.find(e => e.subType === 'barracks');
         if (!bar && gold >= 150) {
@@ -1166,8 +1160,8 @@ export class Game implements IGameContext {
             }
         }
 
-        if (bar && !bar.isConstructing && gold >= 75 && bar.buildQueue.length < 3 && this._effectivePop(team) < this.maxPop[team]) {
-            bar.buildQueue.push('soldier'); this.gold[team] -= 75; if (bar.timer <= 0) bar.timer = 2.5;
+        if (bar && !bar.isConstructing && gold >= 75 && bar.buildQueue.length < 5) {
+            bar.buildQueue.push('soldier'); this.gold[team] -= 75; if (bar.timer <= 0) bar.timer = STATS.soldier.buildTime!;
         }
 
         const army = units.filter(e => e.subType === 'soldier' && e.state === 'idle');
@@ -1303,9 +1297,45 @@ export class Game implements IGameContext {
 
     // ── UI ────────────────────────────────────────────────────────────────────
 
+    private _refreshTrainingProgress(): void {
+        const progressEl  = document.getElementById('trainingProgress')!;
+        const statusEl    = document.getElementById('trainingStatus')!;
+        const barEl       = document.getElementById('trainingBar') as HTMLElement;
+        const queueCount  = document.getElementById('trainingQueueCount')!;
+
+        const sel = this.getSelectedEntities();
+        const b   = sel.length === 1 && sel[0].team === 0 && sel[0].type === 'building' ? sel[0] : null;
+
+        if (!b || b.buildQueue.length === 0) {
+            progressEl.classList.add('hidden');
+            return;
+        }
+
+        progressEl.classList.remove('hidden');
+        const front     = b.buildQueue[0];
+        const buildTime = STATS[front].buildTime ?? 10;
+        const atCap     = b.timer <= 0 && this.population[0] >= this.maxPop[0];
+
+        if (atCap) {
+            statusEl.textContent  = `⏸ Population limit reached — ${STATS[front].label} ready`;
+            statusEl.className    = 'text-xs font-semibold text-orange-400';
+            barEl.style.width     = '100%';
+            barEl.className       = 'bg-orange-500 h-2 rounded-full';
+        } else {
+            const pct = b.timer <= 0 ? 100 : Math.max(0, (1 - b.timer / buildTime) * 100);
+            statusEl.textContent  = `Training: ${STATS[front].label}`;
+            statusEl.className    = 'text-xs font-semibold text-gray-300';
+            barEl.style.width     = `${pct.toFixed(1)}%`;
+            barEl.className       = 'bg-blue-500 h-2 rounded-full';
+        }
+
+        queueCount.textContent = b.buildQueue.length > 1 ? `+${b.buildQueue.length - 1} queued` : '';
+    }
+
     updateUI(): void {
         const menu = document.getElementById('actionMenu')!; menu.innerHTML = '';
         const sel  = this.getSelectedEntities();
+        this._refreshTrainingProgress();
         document.getElementById('selectionInfo')!.innerText = sel.length ? `${sel.length} selected` : 'No selection';
         const hasBuilders = sel.some(e => e.subType === 'builder' && e.team === 0);
         if (sel.length === 1 && sel[0].team === 0 && !sel[0].isConstructing) {
@@ -1329,13 +1359,17 @@ export class Game implements IGameContext {
     }
 
     private _trainUnit(building: Entity, type: SubType): void {
-        if (this._effectivePop(0) >= this.maxPop[0]) {
-            this.notify('Population cap reached!', 'text-orange-400'); return;
+        if (building.buildQueue.length >= 5) {
+            this.notify('Queue full!', 'text-orange-400'); return;
         }
-        if (this.gold[0] >= STATS[type].cost) {
-            this.gold[0] -= STATS[type].cost; building.buildQueue.push(type);
-            if (building.timer <= 0) building.timer = 2; this.updateGoldUI();
-        } else this.notify('Low Gold!', 'text-red-400');
+        if (this.gold[0] < STATS[type].cost) {
+            this.notify('Low Gold!', 'text-red-400'); return;
+        }
+        this.gold[0] -= STATS[type].cost;
+        building.buildQueue.push(type);
+        if (building.timer <= 0) building.timer = STATS[type].buildTime ?? 10;
+        this.updateGoldUI();
+        this._refreshTrainingProgress();
     }
 
     startPlacement(type: SubType): void {

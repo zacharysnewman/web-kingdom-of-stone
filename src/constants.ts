@@ -37,8 +37,9 @@ export interface StatBlock {
     cooldown?: number;
     goldValue?: number;
     color?: string;
-    popCap?: number;  // population capacity provided by this building
-    popCost?: number; // population consumed by this unit
+    popCap?: number;   // population capacity provided by this building
+    popCost?: number;  // population consumed by this unit
+    buildTime?: number; // seconds to train this unit
 }
 
 export const STATS: Record<SubType, StatBlock> = {
@@ -46,9 +47,9 @@ export const STATS: Record<SubType, StatBlock> = {
     barracks:      { type: 'building', cost: 150,  hp: 700,  radius: 35, label: 'Barracks',                                                        popCap: 5  },
     archery_range: { type: 'building', cost: 200,  hp: 550,  radius: 35, label: 'Archery Range',                                                    popCap: 5  },
     gold_mine:     { type: 'resource', cost: 0,   hp: 2000, goldValue: 500, radius: 40, color: '#d97706', label: 'Gold Mine' },
-    builder:       { type: 'unit', cost: 50,  hp: 80,  radius: 10, speed: 70,  range: 30,  damage: 8,  cooldown: 0.8,  label: 'Builder',  popCost: 1 },
-    soldier:       { type: 'unit', cost: 75,  hp: 240, radius: 12, speed: 85,  range: 25,  damage: 18, cooldown: 1.0,  label: 'Soldier',  popCost: 1 },
-    archer:        { type: 'unit', cost: 100, hp: 120, radius: 10, speed: 75,  range: 160, damage: 22, cooldown: 1.4,  label: 'Archer',   popCost: 1 },
+    builder:       { type: 'unit', cost: 50,  hp: 80,  radius: 10, speed: 70,  range: 30,  damage: 8,  cooldown: 0.8,  label: 'Builder',  popCost: 1, buildTime: 10 },
+    soldier:       { type: 'unit', cost: 75,  hp: 240, radius: 12, speed: 85,  range: 25,  damage: 18, cooldown: 1.0,  label: 'Soldier',  popCost: 1, buildTime: 14 },
+    archer:        { type: 'unit', cost: 100, hp: 120, radius: 10, speed: 75,  range: 160, damage: 22, cooldown: 1.4,  label: 'Archer',   popCost: 1, buildTime: 18 },
 };
 
 export const SPAWN_POINTS: { x: number; y: number }[] = [
