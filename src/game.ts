@@ -425,6 +425,13 @@ export class Game implements IGameContext {
 
     updateGoldUI(): void { this._syncPlayerStore(); }
 
+    private _effectivePop(team: number): number {
+        const queued = this.entities
+            .filter(e => e.team === team && e.type === 'building')
+            .reduce((sum, e) => sum + e.buildQueue.reduce((s, t) => s + (STATS[t].popCost ?? 0), 0), 0);
+        return (this.population[team] ?? 0) + queued;
+    }
+
     private _syncPlayerStore(): void {
         playerStore.setState({
             gold:       this.gold[0],
@@ -1142,7 +1149,7 @@ export class Game implements IGameContext {
             });
         }
 
-        if (builders.length < 4 && gold >= 50 && this.population[team] < this.maxPop[team]) { tc.buildQueue.push('builder'); this.gold[team] -= 50; if (tc.timer <= 0) tc.timer = 2; }
+        if (builders.length < 4 && gold >= 50 && this._effectivePop(team) < this.maxPop[team]) { tc.buildQueue.push('builder'); this.gold[team] -= 50; if (tc.timer <= 0) tc.timer = 2; }
 
         const bar = units.find(e => e.subType === 'barracks');
         if (!bar && gold >= 150) {
@@ -1155,7 +1162,7 @@ export class Game implements IGameContext {
             }
         }
 
-        if (bar && !bar.isConstructing && gold >= 75 && bar.buildQueue.length < 3 && this.population[team] < this.maxPop[team]) {
+        if (bar && !bar.isConstructing && gold >= 75 && bar.buildQueue.length < 3 && this._effectivePop(team) < this.maxPop[team]) {
             bar.buildQueue.push('soldier'); this.gold[team] -= 75; if (bar.timer <= 0) bar.timer = 2.5;
         }
 
@@ -1318,7 +1325,7 @@ export class Game implements IGameContext {
     }
 
     private _trainUnit(building: Entity, type: SubType): void {
-        if (this.population[0] >= this.maxPop[0]) {
+        if (this._effectivePop(0) >= this.maxPop[0]) {
             this.notify('Population cap reached!', 'text-orange-400'); return;
         }
         if (this.gold[0] >= STATS[type].cost) {
