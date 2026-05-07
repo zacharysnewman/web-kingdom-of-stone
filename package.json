@@ -22,6 +22,7 @@
     "howler": "^2.2.4",
     "pathfinding": "^0.4.18",
     "pixi.js": "^8.18.1",
-    "simplex-noise": "^4.0.3"
+    "simplex-noise": "^4.0.3",
+    "zustand": "^5.0.13"
   }
 }

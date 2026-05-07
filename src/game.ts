@@ -10,6 +10,7 @@ import { Entity } from './entity';
 import { Projectile } from './projectile';
 import { dist, angle, mulberry32 } from './utils';
 import type { Effect, FloatingText, DragSelect, PointerState, IGameContext } from './types';
+import { playerStore } from './store';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -58,6 +59,8 @@ export class Game implements IGameContext {
 
     // Game state — initialised in init()
     private gold: number[] = [];
+    private population: number[] = [];
+    private maxPop: number[] = [];
     private aiTimers: number[] = [];
     private aiCount = 0;
     private diff!: DifficultyConfig;
@@ -107,6 +110,10 @@ export class Game implements IGameContext {
         window.addEventListener('mousemove', e => { this.mouseScreenX = e.clientX; this.mouseScreenY = e.clientY; });
         this._bindMenuUI();
         this._setupInputs();
+        playerStore.subscribe(s => {
+            document.getElementById('goldDisplay')!.innerText = String(Math.floor(s.gold));
+            document.getElementById('popDisplay')!.innerText = `${s.population} / ${s.maxPop}`;
+        });
         // PixiJS handles its own resize via resizeTo:window; keep camera clamped
         window.addEventListener('resize', () => this._clampCamera());
         app.ticker.add(() => {
@@ -245,8 +252,10 @@ export class Game implements IGameContext {
         this.aiCount  = this.settings.aiCount;
         this.diff     = DIFFICULTY[this.settings.difficulty];
 
-        this.gold     = Array.from({ length: this.aiCount + 1 }, () => 1000);
-        this.aiTimers = Array.from({ length: this.aiCount }, () => 0);
+        this.gold       = Array.from({ length: this.aiCount + 1 }, () => 1000);
+        this.population = Array.from({ length: this.aiCount + 1 }, () => 0);
+        this.maxPop     = Array.from({ length: this.aiCount + 1 }, () => 0);
+        this.aiTimers   = Array.from({ length: this.aiCount }, () => 0);
 
         this.entities = []; this.projectiles = []; this.effects = [];
         this.floatingTexts = []; this.nextId = 1;
@@ -286,6 +295,7 @@ export class Game implements IGameContext {
         this._generateMap(seed);
 
         this.camera.x = ps.x; this.camera.y = ps.y; this._clampCamera();
+        for (let t = 0; t <= this.aiCount; t++) this._recomputeMaxPop(t);
         this.updateGoldUI(); this.updateUI(); this._updateOpponentsHUD();
         this._saveState();
         Audio.startWind();
@@ -340,6 +350,10 @@ export class Game implements IGameContext {
         const e = new Entity(this, this.nextId++, type, subType, x, y, team);
         this.entities.push(e);
         this._createEntityDisplay(e);
+        if (type === 'unit' && team >= 0 && team < this.population.length) {
+            this.population[team]++;
+            if (team === CONSTANTS.TEAM_PLAYER) this._syncPlayerStore();
+        }
         if (type === 'building' && this.navGrid)
             this._rebuildNavGrid();
         return e;
@@ -409,7 +423,23 @@ export class Game implements IGameContext {
         this.textDisplays.set(ft, t);
     }
 
-    updateGoldUI(): void { document.getElementById('goldDisplay')!.innerText = String(Math.floor(this.gold[0])); }
+    updateGoldUI(): void { this._syncPlayerStore(); }
+
+    private _syncPlayerStore(): void {
+        playerStore.setState({
+            gold:       this.gold[0],
+            population: this.population[0] ?? 0,
+            maxPop:     this.maxPop[0] ?? 0,
+        });
+    }
+
+    private _recomputeMaxPop(team: number): void {
+        if (team < 0 || team >= this.maxPop.length) return;
+        this.maxPop[team] = this.entities
+            .filter(e => e.team === team && e.type === 'building' && !e.isConstructing && !e.isDead)
+            .reduce((sum, e) => sum + (STATS[e.subType].popCap ?? 0), 0);
+        if (team === CONSTANTS.TEAM_PLAYER) this._syncPlayerStore();
+    }
 
     // ── Collision / placement helpers ─────────────────────────────────────────
 
@@ -1035,6 +1065,7 @@ export class Game implements IGameContext {
                         if (e.target.hp >= e.target.maxHp) {
                             e.target.hp = e.target.maxHp; e.target.isConstructing = false; e.state = 'idle';
                             if (e.target.team === 0) Audio.build();
+                            this._recomputeMaxPop(e.target.team);
                         }
                     }
                 }
@@ -1048,11 +1079,16 @@ export class Game implements IGameContext {
         }
 
         let tcDied = false, navDirty = false;
+        const deadBuildingTeams = new Set<number>();
         for (let i = this.entities.length - 1; i >= 0; i--) {
             const dead = this.entities[i];
             if (dead.isDead) {
                 if (dead.subType === 'town_center') tcDied = true;
-                if (dead.type === 'building') navDirty = true;
+                if (dead.type === 'building') { navDirty = true; deadBuildingTeams.add(dead.team); }
+                if (dead.type === 'unit' && dead.team >= 0 && dead.team < this.population.length) {
+                    this.population[dead.team] = Math.max(0, this.population[dead.team] - 1);
+                    if (dead.team === CONSTANTS.TEAM_PLAYER) this._syncPlayerStore();
+                }
                 this.selectedIds.delete(dead.id);
                 const disp = this.entityDisplays.get(dead.id);
                 if (disp) { this.entityLayer.removeChild(disp); this.entityDisplays.delete(dead.id); }
@@ -1060,6 +1096,7 @@ export class Game implements IGameContext {
             }
         }
         if (navDirty) this._rebuildNavGrid();
+        for (const team of deadBuildingTeams) this._recomputeMaxPop(team);
         if (tcDied)   this._checkWinCondition();
 
         this.effects.forEach(ef => { ef.radius += 80 * dt; ef.alpha -= 2 * dt; if (ef.alpha <= 0) ef.isDead = true; });
@@ -1105,7 +1142,7 @@ export class Game implements IGameContext {
             });
         }
 
-        if (builders.length < 4 && gold >= 50) { tc.buildQueue.push('builder'); this.gold[team] -= 50; if (tc.timer <= 0) tc.timer = 2; }
+        if (builders.length < 4 && gold >= 50 && this.population[team] < this.maxPop[team]) { tc.buildQueue.push('builder'); this.gold[team] -= 50; if (tc.timer <= 0) tc.timer = 2; }
 
         const bar = units.find(e => e.subType === 'barracks');
         if (!bar && gold >= 150) {
@@ -1118,7 +1155,7 @@ export class Game implements IGameContext {
             }
         }
 
-        if (bar && !bar.isConstructing && gold >= 75 && bar.buildQueue.length < 3) {
+        if (bar && !bar.isConstructing && gold >= 75 && bar.buildQueue.length < 3 && this.population[team] < this.maxPop[team]) {
             bar.buildQueue.push('soldier'); this.gold[team] -= 75; if (bar.timer <= 0) bar.timer = 2.5;
         }
 
@@ -1281,6 +1318,9 @@ export class Game implements IGameContext {
     }
 
     private _trainUnit(building: Entity, type: SubType): void {
+        if (this.population[0] >= this.maxPop[0]) {
+            this.notify('Population cap reached!', 'text-orange-400'); return;
+        }
         if (this.gold[0] >= STATS[type].cost) {
             this.gold[0] -= STATS[type].cost; building.buildQueue.push(type);
             if (building.timer <= 0) building.timer = 2; this.updateGoldUI();

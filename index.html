@@ -41,13 +41,24 @@
 
     <!-- Top HUD -->
     <div class="ui-layer top-0 left-0 w-full p-4 flex justify-between items-start z-10">
-        <div class="interactive bg-gray-900/80 backdrop-blur border border-gray-700 rounded-xl p-3 shadow-lg flex items-center space-x-3">
-            <div class="w-8 h-8 rounded-full bg-yellow-500/20 flex items-center justify-center border border-yellow-500">
-                <span class="text-yellow-400 font-bold">G</span>
+        <div class="flex space-x-2">
+            <div class="interactive bg-gray-900/80 backdrop-blur border border-gray-700 rounded-xl p-3 shadow-lg flex items-center space-x-3">
+                <div class="w-8 h-8 rounded-full bg-yellow-500/20 flex items-center justify-center border border-yellow-500">
+                    <span class="text-yellow-400 font-bold">G</span>
+                </div>
+                <div>
+                    <div class="text-xs text-gray-400 uppercase tracking-wider font-semibold">Treasury</div>
+                    <div id="goldDisplay" class="text-2xl font-bold text-yellow-400 font-mono">1000</div>
+                </div>
             </div>
-            <div>
-                <div class="text-xs text-gray-400 uppercase tracking-wider font-semibold">Treasury</div>
-                <div id="goldDisplay" class="text-2xl font-bold text-yellow-400 font-mono">1000</div>
+            <div class="interactive bg-gray-900/80 backdrop-blur border border-gray-700 rounded-xl p-3 shadow-lg flex items-center space-x-3">
+                <div class="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center border border-green-500">
+                    <span class="text-green-400 font-bold">P</span>
+                </div>
+                <div>
+                    <div class="text-xs text-gray-400 uppercase tracking-wider font-semibold">Population</div>
+                    <div id="popDisplay" class="text-2xl font-bold text-green-400 font-mono">0 / 10</div>
+                </div>
             </div>
         </div>
 

@@ -37,16 +37,18 @@ export interface StatBlock {
     cooldown?: number;
     goldValue?: number;
     color?: string;
+    popCap?: number;  // population capacity provided by this building
+    popCost?: number; // population consumed by this unit
 }
 
 export const STATS: Record<SubType, StatBlock> = {
-    town_center:   { type: 'building', cost: 0,   hp: 2400, radius: 45, label: 'Town Center', range: 250, damage: 15, cooldown: 0.28 },
-    barracks:      { type: 'building', cost: 150,  hp: 700,  radius: 35, label: 'Barracks' },
-    archery_range: { type: 'building', cost: 200,  hp: 550,  radius: 35, label: 'Archery Range' },
+    town_center:   { type: 'building', cost: 0,   hp: 2400, radius: 45, label: 'Town Center', range: 250, damage: 15, cooldown: 0.28, popCap: 10 },
+    barracks:      { type: 'building', cost: 150,  hp: 700,  radius: 35, label: 'Barracks',                                                        popCap: 5  },
+    archery_range: { type: 'building', cost: 200,  hp: 550,  radius: 35, label: 'Archery Range',                                                    popCap: 5  },
     gold_mine:     { type: 'resource', cost: 0,   hp: 2000, goldValue: 500, radius: 40, color: '#d97706', label: 'Gold Mine' },
-    builder:       { type: 'unit', cost: 50,  hp: 80,  radius: 10, speed: 70,  range: 30,  damage: 8,  cooldown: 0.8,  label: 'Builder' },
-    soldier:       { type: 'unit', cost: 75,  hp: 240, radius: 12, speed: 85,  range: 25,  damage: 18, cooldown: 1.0,  label: 'Soldier' },
-    archer:        { type: 'unit', cost: 100, hp: 120, radius: 10, speed: 75,  range: 160, damage: 22, cooldown: 1.4,  label: 'Archer' },
+    builder:       { type: 'unit', cost: 50,  hp: 80,  radius: 10, speed: 70,  range: 30,  damage: 8,  cooldown: 0.8,  label: 'Builder',  popCost: 1 },
+    soldier:       { type: 'unit', cost: 75,  hp: 240, radius: 12, speed: 85,  range: 25,  damage: 18, cooldown: 1.0,  label: 'Soldier',  popCost: 1 },
+    archer:        { type: 'unit', cost: 100, hp: 120, radius: 10, speed: 75,  range: 160, damage: 22, cooldown: 1.4,  label: 'Archer',   popCost: 1 },
 };
 
 export const SPAWN_POINTS: { x: number; y: number }[] = [

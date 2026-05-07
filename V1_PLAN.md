@@ -115,7 +115,7 @@ Town Center upgrades unlock: improved mining rate, archer damage, soldier HP. Co
 | M1        | A* pathfinding, procedural maps | ✅ Done |
 | M2        | PixiJS renderer, fog of war | ✅ Done |
 | M3        | Howler audio | ✅ Done |
-| M4        | Zustand state, population cap | 🔲 Pending |
+| M4        | Zustand state, population cap | ✅ Done |
 | M5        | Villager FSM, control groups, unit stance, tech tree stub | 🔲 Pending |
 
 ## Progress Notes
@@ -150,3 +150,13 @@ Main menu, difficulty selector, AI count slider, FFA multi-AI (teams 1–N), Con
 - Sprite layout: `ack` (0–200 ms) · `hit` (300–400 ms) · `build` (500–1000 ms) · `wind` (1200–5200 ms, looping)
 - `src/audio.ts` — `Audio.ack/hit/build/startWind/stopWind/spatialVol`
 - Triggers: `ack` on player right-click orders; `hit` on melee strike and projectile impact (spatially attenuated); `build` on player building completion; `wind` loops from `init()`, stops on game over
+
+### M4 — Done
+- `zustand` v5 (vanilla) installed; `src/store.ts` exposes `playerStore` with `{ gold, population, maxPop }`
+- Constructor subscribes once: store changes drive `goldDisplay` and `popDisplay` DOM updates — no scattered manual DOM calls
+- `updateGoldUI()` now delegates to `_syncPlayerStore()` so all existing call sites continue to work
+- `_recomputeMaxPop(team)` sums `popCap` of fully-constructed buildings for a team; triggered on building complete, building death, and after `init()` entity setup
+- `addEntity()` increments `population[team]` for unit spawns; dead-entity cleanup decrements it
+- `popCap` added to STATS: `town_center=10`, `barracks=5`, `archery_range=5`; `popCost=1` on all units
+- Player training and AI unit queuing both check population cap before allowing training
+- HUD shows new green Population widget (`population / maxPop`) next to gold
