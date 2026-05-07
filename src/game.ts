@@ -435,7 +435,7 @@ export class Game implements IGameContext {
     private _syncPlayerStore(): void {
         playerStore.setState({
             gold:       this.gold[0],
-            population: this.population[0] ?? 0,
+            population: this._effectivePop(0),
             maxPop:     this.maxPop[0] ?? 0,
         });
     }
@@ -1079,9 +1079,13 @@ export class Game implements IGameContext {
             }
 
             if (e.type === 'building' && !e.isConstructing && e.buildQueue.length > 0 && e.timer <= 0) {
-                const unit = e.buildQueue.shift()!;
-                this.addEntity('unit', unit, e.x, e.y + e.radius + 20, e.team);
-                if (e.buildQueue.length > 0) e.timer = this.diff.buildDelay * 3;
+                if (this.population[e.team] < this.maxPop[e.team]) {
+                    const unit = e.buildQueue.shift()!;
+                    this.addEntity('unit', unit, e.x, e.y + e.radius + 20, e.team);
+                    if (e.buildQueue.length > 0) e.timer = this.diff.buildDelay * 3;
+                } else {
+                    e.timer = 0.25; // retry when a population slot opens
+                }
             }
         }
 
