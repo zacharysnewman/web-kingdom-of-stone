@@ -4,7 +4,7 @@ import type { Difficulty, SubType } from '../constants';
 import { Entity } from '../entity';
 import { Projectile } from '../projectile';
 import { Audio } from '../audio';
-import { dist, worldToIso } from '../utils';
+import { dist, worldToIso, isoToWorld } from '../utils';
 import type { Effect, FloatingText, IGameContext } from '../types';
 import { playerStore } from '../store';
 
@@ -438,8 +438,9 @@ export class Game implements IGameContext, IGameAdapter {
         if (my <= EDGE) ey = -1 * (1 - my / EDGE);
         else if (my >= H - EDGE) ey = (my - (H - EDGE)) / EDGE;
         if (ex !== 0 || ey !== 0) {
-            this.camera.x += ex * EDGE_SPEED * dt / this.camera.zoom;
-            this.camera.y += ey * EDGE_SPEED * dt / this.camera.zoom;
+            const wd = isoToWorld(ex * EDGE_SPEED * dt / this.camera.zoom, ey * EDGE_SPEED * dt / this.camera.zoom);
+            this.camera.x += wd.x;
+            this.camera.y += wd.y;
             this.camera.clamp();
         }
 

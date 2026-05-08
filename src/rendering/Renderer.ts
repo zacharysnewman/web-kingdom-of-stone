@@ -46,10 +46,9 @@ export class Renderer {
             this.textLayer,
             this.fogGfx,
             this.ghostGfx,
+            this.dragGfx,
         );
         stage.addChild(this.worldContainer);
-        // dragGfx lives in screen space — drawn over everything else
-        stage.addChild(this.dragGfx);
     }
 
     buildTileLayer(stoneGrid: boolean[][], mapCellSize: number): void {
@@ -332,8 +331,12 @@ export class Renderer {
         const g = this.dragGfx;
         g.clear();
         if (!dragSelect?.active) return;
-        const { startSx: bx, startSy: by, currentSx, currentSy } = dragSelect;
-        g.rect(bx, by, currentSx - bx, currentSy - by)
+        // Convert screen coords to worldContainer local space.
+        // worldContainer is uniform scale+translate, so a rect in local space
+        // maps to a rect in screen space (no skewing from iso projection).
+        const tl = this.worldContainer.toLocal({ x: dragSelect.startSx,   y: dragSelect.startSy });
+        const br = this.worldContainer.toLocal({ x: dragSelect.currentSx, y: dragSelect.currentSy });
+        g.rect(tl.x, tl.y, br.x - tl.x, br.y - tl.y)
          .fill({ color: 0x3b82f6, alpha: 0.15 })
          .stroke({ color: 0x60a5fa, width: 1 });
     }
