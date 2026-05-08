@@ -48,6 +48,7 @@ export interface PointerState {
     startWy: number;
     intent: 'unknown' | 'box' | 'pan' | 'done';
     button: number;
+    pointerType: string;
 }
 
 export interface IGameContext {
