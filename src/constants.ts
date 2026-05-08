@@ -52,6 +52,21 @@ export const STATS: Record<SubType, StatBlock> = {
     archer:        { type: 'unit', cost: 100, hp: 120, radius: 10, speed: 75,  range: 160, damage: 22, cooldown: 1.4,  label: 'Archer',   popCost: 1, buildTime: 18 },
 };
 
+export interface UnitSpriteConfig {
+    file: string;
+    frameW: number;
+    frameH: number;
+    frameCount: number;
+    row: number;
+    scale: number;
+}
+
+export const UNIT_SPRITES: Partial<Record<SubType, UnitSpriteConfig>> = {
+    builder: { file: 'sprites/MiniPrinceMan.png', frameW: 32, frameH: 32, frameCount: 4, row: 0, scale: 2 },
+    soldier: { file: 'sprites/MiniSwordMan.png',  frameW: 32, frameH: 32, frameCount: 4, row: 0, scale: 2 },
+    archer:  { file: 'sprites/MiniArcherMan.png', frameW: 32, frameH: 32, frameCount: 4, row: 0, scale: 2 },
+};
+
 export const SPAWN_POINTS: { x: number; y: number }[] = [
     { x: 500,                        y: CONSTANTS.MAP_SIZE / 2 },
     { x: CONSTANTS.MAP_SIZE - 500,   y: CONSTANTS.MAP_SIZE / 2 },

@@ -1,6 +1,6 @@
 import { STATS, TEAM_COLORS, TEAM_UNIT_COLORS } from './constants';
 import type { SubType } from './constants';
-import type { EntityType, EntityState, IGameContext, Point } from './types';
+import type { EntityType, EntityState, IGameContext, Point, UnitStance } from './types';
 
 export class Entity {
     readonly id: number;
@@ -10,7 +10,7 @@ export class Entity {
     y: number;
     readonly team: number;
     hp: number;
-    readonly maxHp: number;
+    maxHp: number;
     readonly radius: number;
     color: string;
     goldLeft?: number;
@@ -27,6 +27,8 @@ export class Entity {
     velY: number;
     waypoints: Point[] | null;
     pathTimer?: number;
+    carryGold: number;
+    stance: UnitStance;
 
     constructor(
         private readonly ctx: IGameContext,
@@ -65,6 +67,8 @@ export class Entity {
         this.velX = 0;
         this.velY = 0;
         this.waypoints = null;
+        this.carryGold = 0;
+        this.stance = subType === 'builder' ? 'defensive' : 'aggressive';
     }
 
     damage(amount: number, attackerTeam: number): void {
