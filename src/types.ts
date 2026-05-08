@@ -26,10 +26,14 @@ export interface FloatingText {
 }
 
 export interface DragSelect {
-    startX: number;
+    startX: number;    // world (selection logic)
     startY: number;
     currentX: number;
     currentY: number;
+    startSx: number;   // screen (rendering)
+    startSy: number;
+    currentSx: number;
+    currentSy: number;
     active: boolean;
 }
 

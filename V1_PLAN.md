@@ -118,7 +118,7 @@ Town Center upgrades unlock: improved mining rate, archer damage, soldier HP. Co
 | M4        | Zustand state, population cap | ✅ Done |
 | M5        | Villager FSM, control groups, unit stance, tech tree stub | ✅ Done |
 | M6        | Character sprites (Minifolks outlined), walk animation | ✅ Done |
-| M7        | Isometric grid — tile renderer, iso coordinate system | 🔄 In Progress |
+| M7        | Isometric grid — tile renderer, iso coordinate system | ✅ Done |
 
 ---
 
@@ -178,6 +178,18 @@ Characters (Minifolks) are already isometric and look correct as-is. All game lo
 - Elevated terrain (cliff tiles, height layers)
 
 ---
+
+### M7 — Done
+- ISO constants (`ISO_TW=32, ISO_TH=16, ISO_CELL=40, ISO_SX=0.4, ISO_SY=0.2`) added to `constants.ts`
+- `worldToIso` / `isoToWorld` added to `utils.ts`
+- `Renderer` tile layer: 75×75 grid of `PIXI.Sprite` with anchor `(0.5,0)`, rendered in diagonal (col+row) order; grass tiles 16–19, stone tiles 40–43
+- `Camera.apply()` and `screenToWorld()` convert through iso; `clamp()` simplified to `[0, MAP_SIZE]`
+- All entity containers positioned via `worldToIso`; sorted by `e.x+e.y`; buildings/resources draw iso diamond poly
+- Projectiles, effects, ghost, fog cells all converted to iso coordinates
+- `dragGfx` moved to stage (screen space) for correct rubber-band rectangle
+- Pan formula updated via `isoToWorld` for correct iso drag direction
+- `createFloatingText` converts world → iso on creation
+- `scripts/gen-tiles.cjs` generates 8 tile PNGs (grass 16–19, stone 40–43)
 
 ### M6 — Done
 - MinifolksHumans outlined sprite sheets copied to `public/sprites/`

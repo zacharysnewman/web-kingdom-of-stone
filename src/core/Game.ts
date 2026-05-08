@@ -4,7 +4,7 @@ import type { Difficulty, SubType } from '../constants';
 import { Entity } from '../entity';
 import { Projectile } from '../projectile';
 import { Audio } from '../audio';
-import { dist } from '../utils';
+import { dist, worldToIso } from '../utils';
 import type { Effect, FloatingText, IGameContext } from '../types';
 import { playerStore } from '../store';
 
@@ -60,9 +60,11 @@ export class Game implements IGameContext, IGameAdapter {
         document.body.insertBefore(app.canvas, document.body.firstChild);
         app.canvas.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;touch-action:none;z-index:0;';
         const spriteUrls = [...new Set(Object.values(UNIT_SPRITES).filter(Boolean).map(s => s!.file))];
-        await Promise.all(spriteUrls.map(url =>
-            PIXI.Assets.load({ src: url, data: { scaleMode: 'nearest' } })
-        ));
+        const tileIndices = [16, 17, 18, 19, 40, 41, 42, 43];
+        await Promise.all([
+            ...spriteUrls.map(url => PIXI.Assets.load({ src: url, data: { scaleMode: 'nearest' } })),
+            ...tileIndices.map(i => PIXI.Assets.load({ src: `tiles/tile_${String(i).padStart(3, '0')}.png`, data: { scaleMode: 'nearest' } })),
+        ]);
         return new Game(app);
     }
 
@@ -90,7 +92,7 @@ export class Game implements IGameContext, IGameAdapter {
 
         this._setupInput();
 
-        window.addEventListener('resize', () => this.camera.clamp(this._canvasWidth, this._canvasHeight));
+        window.addEventListener('resize', () => this.camera.clamp());
 
         app.ticker.add(() => {
             const dt = Math.min(0.05, this.app.ticker.deltaMS / 1000);
@@ -108,7 +110,8 @@ export class Game implements IGameContext, IGameAdapter {
     }
 
     createFloatingText(text: string, x: number, y: number, color: string): void {
-        const ft: FloatingText = { text, x, y, alpha: 1, color, isDead: false };
+        const iso = worldToIso(x, y);
+        const ft: FloatingText = { text, x: iso.x, y: iso.y, alpha: 1, color, isDead: false };
         this.state.floatingTexts.push(ft);
         this.renderer.addFloatingText(ft);
     }
@@ -247,7 +250,7 @@ export class Game implements IGameContext, IGameAdapter {
 
         this.renderer.clearEntityDisplays();
         this.renderer.clearTextDisplays();
-        this.renderer.clearStone();
+        this.renderer.clearTileLayer();
         this.renderer.clearFog();
 
         if (loadSave && this.saveManager.hasSave()) {
@@ -272,7 +275,7 @@ export class Game implements IGameContext, IGameAdapter {
         this._generateMap(seed);
 
         this.camera.x = ps.x; this.camera.y = ps.y;
-        this.camera.clamp(this._canvasWidth, this._canvasHeight);
+        this.camera.clamp();
         for (let t = 0; t <= s.aiCount; t++) this.recomputeMaxPop(t);
         this._syncPlayerStore(); this.updateUI();
         this.uiManager.updateOpponentsHUD(this._aliveAITCCount());
@@ -340,7 +343,7 @@ export class Game implements IGameContext, IGameAdapter {
         this.state.mapCellSize = mapCellSize;
         this.pathfinding.init(stoneGrid, mapCellSize);
         this.fogManager.init();
-        this.renderer.drawStone(stoneGrid, mapCellSize);
+        this.renderer.buildTileLayer(stoneGrid, mapCellSize);
         for (const { wx, wy } of mines)
             this.addEntity('resource', 'gold_mine', Math.round(wx / 20) * 20, Math.round(wy / 20) * 20, -1);
     }
@@ -372,7 +375,7 @@ export class Game implements IGameContext, IGameAdapter {
                         const members = this.state.entities.filter(en => this.state.selectedIds.has(en.id));
                         this.camera.x = members.reduce((s, en) => s + en.x, 0) / members.length;
                         this.camera.y = members.reduce((s, en) => s + en.y, 0) / members.length;
-                        this.camera.clamp(this._canvasWidth, this._canvasHeight);
+                        this.camera.clamp();
                     }
                     this.updateUI();
                 },
@@ -437,7 +440,7 @@ export class Game implements IGameContext, IGameAdapter {
         if (ex !== 0 || ey !== 0) {
             this.camera.x += ex * EDGE_SPEED * dt / this.camera.zoom;
             this.camera.y += ey * EDGE_SPEED * dt / this.camera.zoom;
-            this.camera.clamp(W, H);
+            this.camera.clamp();
         }
 
         // Passive gold

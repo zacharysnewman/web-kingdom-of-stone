@@ -6,6 +6,15 @@ export const CONSTANTS = {
     NAV_CELL: 40,
 } as const;
 
+// Isometric projection constants (2:1 iso, 32×16 diamond tiles)
+export const ISO = {
+    TW: 32,   // diamond pixel width
+    TH: 16,   // diamond pixel height
+    CELL: 40, // world units per tile (= NAV_CELL)
+    SX: 0.4,  // (TW/2) / CELL — world→iso x scale
+    SY: 0.2,  // (TH/2) / CELL — world→iso y scale
+} as const;
+
 export const TEAM_COLORS: string[] = ['#3b82f6', '#ef4444', '#f97316', '#a855f7', '#ec4899', '#14b8a6'];
 export const TEAM_UNIT_COLORS: string[] = ['#93c5fd', '#fca5a5', '#fdba74', '#d8b4fe', '#f9a8d4', '#99f6e4'];
 

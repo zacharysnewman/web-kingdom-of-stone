@@ -1,4 +1,4 @@
-import { dist } from '../utils';
+import { dist, isoToWorld } from '../utils';
 import type { GameState } from '../core/GameState';
 import { Camera } from '../rendering/Camera';
 
@@ -35,7 +35,7 @@ export class InputManager {
             const wa = camera.screenToWorld(e.clientX, e.clientY, width, height);
             camera.x -= wa.x - wb.x;
             camera.y -= wa.y - wb.y;
-            camera.clamp(width, height);
+            camera.clamp();
         }, { passive: false, signal });
 
         canvas.addEventListener('pointerdown', e => {
@@ -73,7 +73,7 @@ export class InputManager {
                         );
                         if (!hitPlayer) {
                             ptr.intent = 'box';
-                            state.dragSelect = { startX: ptr.startWx, startY: ptr.startWy, currentX: ptr.wx, currentY: ptr.wy, active: true };
+                            state.dragSelect = { startX: ptr.startWx, startY: ptr.startWy, currentX: ptr.wx, currentY: ptr.wy, startSx: ptr.startX, startSy: ptr.startY, currentSx: ptr.sx, currentSy: ptr.sy, active: true };
                         } else {
                             ptr.intent = 'pan';
                         }
@@ -82,11 +82,14 @@ export class InputManager {
                 if (ptr.intent === 'box' && state.dragSelect) {
                     state.dragSelect.currentX = ptr.wx;
                     state.dragSelect.currentY = ptr.wy;
+                    state.dragSelect.currentSx = ptr.sx;
+                    state.dragSelect.currentSy = ptr.sy;
                 } else if (ptr.intent === 'pan') {
                     const { width: cw, height: ch } = getCanvasSize();
-                    camera.x -= (ptr.sx - oldSx) / camera.zoom;
-                    camera.y -= (ptr.sy - oldSy) / camera.zoom;
-                    camera.clamp(cw, ch);
+                    const wd = isoToWorld((ptr.sx - oldSx) / camera.zoom, (ptr.sy - oldSy) / camera.zoom);
+                    camera.x -= wd.x;
+                    camera.y -= wd.y;
+                    camera.clamp();
                 }
             }
         }, { signal });
