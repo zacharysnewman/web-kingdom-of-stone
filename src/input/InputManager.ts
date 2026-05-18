@@ -29,7 +29,6 @@ export class InputManager {
 
     canvas.addEventListener("contextmenu", (e) => e.preventDefault(), { signal });
 
-    // ... (wheel event remains the same) ...
     canvas.addEventListener(
       "wheel",
       (e) => {
@@ -105,11 +104,11 @@ export class InputManager {
 
         // Pinch logic
         if (state.pointers.size === 2) {
-          const [p1, p2] = Array.from(state.pointers.values());
-          const oldP1x = p1.pointerId === e.pointerId ? oldSx : p1.sx;
-          const oldP1y = p1.pointerId === e.pointerId ? oldSy : p1.sy;
-          const oldP2x = p2.pointerId === e.pointerId ? oldSx : p2.sx;
-          const oldP2y = p2.pointerId === e.pointerId ? oldSy : p2.sy;
+          const [[id1, p1], [id2, p2]] = Array.from(state.pointers.entries());
+          const oldP1x = id1 === e.pointerId ? oldSx : p1.sx;
+          const oldP1y = id1 === e.pointerId ? oldSy : p1.sy;
+          const oldP2x = id2 === e.pointerId ? oldSx : p2.sx;
+          const oldP2y = id2 === e.pointerId ? oldSy : p2.sy;
 
           const oldDist = dist(oldP1x, oldP1y, oldP2x, oldP2y);
           const currentDist = dist(p1.sx, p1.sy, p2.sx, p2.sy);
@@ -189,30 +188,31 @@ export class InputManager {
           if (ptr.intent === "box" && state.dragSelect?.active) {
             callbacks.onBoxSelectDone();
           } else if (dist(ptr.startX, ptr.startY, ptr.sx, ptr.sy) < 15) {
-            // TAPPING LOGIC:
-            // 1. Double tap for type-selection
-            // 2. If units are selected, single tap = Move (onRightClick)
-            // 3. Otherwise, single tap = Select (onTap)
-            
-            const now = performance.now();
-            const isDoubleTap = 
-              this.lastPointerTap &&
-              now - this.lastPointerTap.time < 300 && 
-              dist(this.lastPointerTap.sx, this.lastPointerTap.sy, ptr.sx, ptr.sy) < 40;
-
-            if (isDoubleTap) {
-              // Task move AND double-tap selection
-              callbacks.onRightClick(ptr.wx, ptr.wy);
+            if (ptr.pointerType === "mouse") {
               callbacks.onTap(ptr.wx, ptr.wy);
-              this.lastPointerTap = null;
             } else {
-              // Single Tap: If we have units selected, move them. Otherwise, select.
-              if (state.selectedIds.size > 0) {
+              // Touch/pen tapping logic:
+              // 1. Double-tap = type-select all units of same type + move
+              // 2. Single tap with units selected = move (onRightClick)
+              // 3. Single tap with nothing selected = select (onTap)
+              const now = performance.now();
+              const isDoubleTap =
+                this.lastPointerTap &&
+                now - this.lastPointerTap.time < 300 &&
+                dist(this.lastPointerTap.sx, this.lastPointerTap.sy, ptr.sx, ptr.sy) < 40;
+
+              if (isDoubleTap) {
                 callbacks.onRightClick(ptr.wx, ptr.wy);
-              } else {
                 callbacks.onTap(ptr.wx, ptr.wy);
+                this.lastPointerTap = null;
+              } else {
+                if (state.selectedIds.size > 0) {
+                  callbacks.onRightClick(ptr.wx, ptr.wy);
+                } else {
+                  callbacks.onTap(ptr.wx, ptr.wy);
+                }
+                this.lastPointerTap = { time: now, sx: ptr.sx, sy: ptr.sy };
               }
-              this.lastPointerTap = { time: now, sx: ptr.sx, sy: ptr.sy };
             }
           }
         }
@@ -222,7 +222,26 @@ export class InputManager {
       { signal },
     );
 
-    // ... (keydown remains the same) ...
+    window.addEventListener(
+      "keydown",
+      (ev: KeyboardEvent) => {
+        if (state.gamePhase !== "playing") return;
+        const digit = parseInt(ev.key);
+        if (isNaN(digit) || digit < 1 || digit > 9) return;
+        ev.preventDefault();
+        if (ev.ctrlKey || ev.metaKey) {
+          callbacks.onControlGroupSave(digit);
+        } else {
+          const now = performance.now();
+          const doubleTap =
+            state.lastGroupTap.group === digit &&
+            now - state.lastGroupTap.time < 300;
+          callbacks.onControlGroupRecall(digit, doubleTap);
+          state.lastGroupTap = { group: digit, time: now };
+        }
+      },
+      { signal },
+    );
   }
 
   teardown(): void {
